@@ -5,6 +5,8 @@ import android.provider.Settings;
 import android.util.Base64;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
@@ -15,6 +17,26 @@ public final class XrayEngine {
 
     private static boolean initialized = false;
 
+    private static void copyAsset(Context context, File directory, String name)
+            throws Exception {
+        File target = new File(directory, name);
+
+        if (target.exists() && target.length() > 0) {
+            return;
+        }
+
+        try (InputStream input = context.getAssets().open(name);
+             FileOutputStream output = new FileOutputStream(target)) {
+
+            byte[] buffer = new byte[8192];
+            int count;
+
+            while ((count = input.read(buffer)) != -1) {
+                output.write(buffer, 0, count);
+            }
+        }
+    }
+
     public static synchronized String initialize(Context context) {
         try {
             Context app = context.getApplicationContext();
@@ -23,6 +45,10 @@ public final class XrayEngine {
                 Seq.setContext(app);
 
                 File assetDir = app.getDir("assets", Context.MODE_PRIVATE);
+
+                copyAsset(app, assetDir, "geoip.dat");
+                copyAsset(app, assetDir, "geosite.dat");
+                copyAsset(app, assetDir, "geoip-only-cn-private.dat");
 
                 String androidId = Settings.Secure.getString(
                     app.getContentResolver(),
@@ -49,7 +75,7 @@ public final class XrayEngine {
 
             return Libv2ray.checkVersionX();
 
-        } catch (Exception e) {
+        } catch (Throwable e) {
             initialized = false;
             throw new RuntimeException("Xray initialization failed", e);
         }
