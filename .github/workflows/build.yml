@@ -26,6 +26,11 @@ jobs:
       - name: Install Android SDK
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
+      - name: Download Xray library
+        run: |
+          mkdir -p app/libs
+          curl -fL "https://github.com/2dust/AndroidLibXrayLite/releases/download/v26.11.9/libv2ray.aar" -o app/libs/libv2ray.aar
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
