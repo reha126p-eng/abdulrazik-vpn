@@ -95,7 +95,7 @@ public final class XrayEngine {
         String serverName = uri.getQueryParameter("sni");
         String publicKey = uri.getQueryParameter("pbk");
         String shortId = uri.getQueryParameter("sid");
-        String fingerprint = uri.getQueryParameter("fp");
+        String fingerprint = "chrome";
         String flow = uri.getQueryParameter("flow");
         String spiderX = uri.getQueryParameter("spx");
 
