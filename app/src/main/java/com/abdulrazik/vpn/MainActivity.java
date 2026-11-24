@@ -58,6 +58,7 @@ public class MainActivity extends Activity {
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
+        root.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         root.setGravity(Gravity.CENTER_HORIZONTAL);
         root.setPadding(dp(25), dp(20), dp(25), dp(20));
         root.setBackgroundColor(Color.rgb(15, 15, 15));
@@ -83,7 +84,7 @@ public class MainActivity extends Activity {
         trafficParams.topMargin = dp(20);
         root.addView(traffic, trafficParams);
 
-        powerButton = text("⏻\nSTART", 27, Color.WHITE);
+        powerButton = text("⏻\nاتصال", 27, Color.WHITE);
         powerButton.setTypeface(null, Typeface.BOLD);
         powerButton.setBackground(gradient(
             Color.rgb(255, 145, 0),
@@ -97,8 +98,8 @@ public class MainActivity extends Activity {
         powerParams.bottomMargin = dp(30);
         root.addView(powerButton, powerParams);
 
-        TextView serverLabel = text("Select Server", 16, Color.WHITE);
-        serverLabel.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
+        TextView serverLabel = text("انتخاب سرور", 16, Color.WHITE);
+        serverLabel.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
         root.addView(serverLabel, new LinearLayout.LayoutParams(-1, dp(35)));
 
         countries = new Spinner(this);
@@ -111,7 +112,7 @@ public class MainActivity extends Activity {
         refreshServerList();
 
         Button addServer = new Button(this);
-        addServer.setText("+ Add VLESS Server");
+        addServer.setText("+ افزودن سرور VLESS");
         addServer.setTextColor(Color.WHITE);
         addServer.setBackground(gradient(
             Color.rgb(45, 45, 45),
@@ -123,17 +124,17 @@ public class MainActivity extends Activity {
         addParams.topMargin = dp(15);
         root.addView(addServer, addParams);
 
-        status = text("Status: Disconnected", 16, Color.WHITE);
+        status = text("وضعیت: قطع است", 16, Color.WHITE);
         LinearLayout.LayoutParams statusParams =
             new LinearLayout.LayoutParams(-1, dp(55));
         statusParams.topMargin = dp(20);
         root.addView(status, statusParams);
 
-        TextView ip = text("IP: Unknown\nLocation: Unknown", 17, Color.WHITE);
+        TextView ip = text("آی‌پی: نامشخص\nموقعیت: نامشخص", 17, Color.WHITE);
         root.addView(ip, new LinearLayout.LayoutParams(-1, dp(75)));
 
         TextView footer = text(
-            "ABDULRAZIK VPN  •  Secure Connection",
+            "ABDULRAZIK VPN  •  اتصال امن",
             12, Color.LTGRAY
         );
         root.addView(footer, new LinearLayout.LayoutParams(-1, dp(45)));
@@ -174,9 +175,9 @@ public class MainActivity extends Activity {
                 return name;
             }
 
-            return uri.getHost() == null ? "VLESS Server" : uri.getHost();
+            return uri.getHost() == null ? "سرور VLESS" : uri.getHost();
         } catch (Exception e) {
-            return "VLESS Server";
+            return "سرور VLESS";
         }
     }
 
@@ -184,7 +185,7 @@ public class MainActivity extends Activity {
         ArrayList<String> items = new ArrayList<>();
 
         if (serverNames.isEmpty()) {
-            items.add("No servers added");
+            items.add("هنوز سروری اضافه نشده");
         } else {
             items.addAll(serverNames);
         }
@@ -229,34 +230,34 @@ public class MainActivity extends Activity {
         input.setSingleLine(false);
         input.setMinLines(2);
         input.setTextColor(Color.BLACK);
-        input.setHint("Paste your vless:// link here");
+        input.setHint("لینک VLESS را اینجا وارد کنید");
         input.setPadding(dp(12), dp(12), dp(12), dp(12));
 
         new AlertDialog.Builder(this)
-            .setTitle("Add VLESS Server")
-            .setMessage("Paste the complete VLESS link:")
+            .setTitle("افزودن سرور VLESS")
+            .setMessage("لینک کامل سرور VLESS را وارد کنید:")
             .setView(input)
-            .setNegativeButton("Cancel", null)
-            .setPositiveButton("Save", (dialog, which) -> {
+            .setNegativeButton("لغو", null)
+            .setPositiveButton("ذخیره", (dialog, which) -> {
                 String link = input.getText().toString().trim();
 
                 if (!link.startsWith("vless://")) {
                     Toast.makeText(this,
-                        "Invalid VLESS link", Toast.LENGTH_LONG).show();
+                        "لینک VLESS نامعتبر است", Toast.LENGTH_LONG).show();
                     return;
                 }
 
                 Uri parsed = Uri.parse(link);
                 if (parsed.getHost() == null || parsed.getUserInfo() == null) {
                     Toast.makeText(this,
-                        "The VLESS link is incomplete", Toast.LENGTH_LONG).show();
+                        "لینک سرور ناقص است", Toast.LENGTH_LONG).show();
                     return;
                 }
 
                 for (String saved : serverUris) {
                     if (saved.equals(link)) {
                         Toast.makeText(this,
-                            "This server is already saved", Toast.LENGTH_SHORT).show();
+                            "این سرور قبلاً ذخیره شده است", Toast.LENGTH_SHORT).show();
                         return;
                     }
                 }
@@ -277,15 +278,15 @@ public class MainActivity extends Activity {
                 refreshServerList();
 
                 Toast.makeText(this,
-                    "Server saved on this phone", Toast.LENGTH_LONG).show();
+                    "سرور در گوشی ذخیره شد", Toast.LENGTH_LONG).show();
             })
             .show();
     }
 
     private void requestVpnPermission() {
         if (serverUris.isEmpty()) {
-            status.setText("Please add a VLESS server first");
-            Toast.makeText(this, "Add a server before connecting", Toast.LENGTH_SHORT).show();
+            status.setText("ابتدا یک سرور VLESS اضافه کنید");
+            Toast.makeText(this, "قبل از اتصال، یک سرور اضافه کنید", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -302,7 +303,7 @@ public class MainActivity extends Activity {
         int selected = countries.getSelectedItemPosition();
 
         if (selected < 0 || selected >= serverUris.size()) {
-            status.setText("Please select a valid server");
+            status.setText("لطفاً یک سرور معتبر انتخاب کنید");
             return;
         }
 
@@ -319,10 +320,10 @@ public class MainActivity extends Activity {
                 startService(serviceIntent);
             }
 
-            status.setText("Status: Connecting...");
-            powerButton.setText("⏻\\nCONNECTING");
+            status.setText("وضعیت: در حال اتصال...");
+            powerButton.setText("⏻\\nدر حال اتصال");
         } catch (Exception e) {
-            status.setText("Could not start VPN service");
+            status.setText("اجرای سرویس VPN ممکن نشد");
             Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
@@ -335,7 +336,7 @@ public class MainActivity extends Activity {
             if (resultCode == RESULT_OK) {
                 startVpnService();
             } else {
-                status.setText("VPN permission denied");
+                status.setText("اجازه اتصال VPN داده نشد");
             }
         }
     }
