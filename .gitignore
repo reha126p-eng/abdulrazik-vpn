@@ -7,3 +7,20 @@ local.properties
 *.jks
 *.keystore
 secrets/
+
+# Temporary and old files
+xray-classes.jar
+app-debug.apk
+new-apk/
+ui-apk/
+xray-apk/
+Kamran 
+main.py
+main.py+0
+main.pyls
+
+Kamran\ 
+
+app/libs/classes.jar
+
+app/libs/libv2ray.aar
