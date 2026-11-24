@@ -5,101 +5,146 @@ import android.net.VpnService;
 import android.content.Intent;
 import android.os.Bundle;
 import android.graphics.Color;
-import android.view.Gravity;
-import android.widget.*;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.view.Gravity;
+import android.view.View;
+import android.widget.*;
 
 public class MainActivity extends Activity {
 
     private static final int VPN_REQUEST_CODE = 100;
-    TextView status;
-    Spinner countries;
+    private TextView status;
+    private TextView powerButton;
+    private Spinner countries;
+
+    private int dp(float value) {
+        return (int) (value * getResources().getDisplayMetrics().density);
+    }
+
+    private GradientDrawable gradient(int color1, int color2, int radius) {
+        GradientDrawable shape = new GradientDrawable(
+            GradientDrawable.Orientation.LEFT_RIGHT,
+            new int[]{color1, color2}
+        );
+        shape.setCornerRadius(dp(radius));
+        return shape;
+    }
+
+    private TextView text(String value, int size, int color) {
+        TextView t = new TextView(this);
+        t.setText(value);
+        t.setTextSize(size);
+        t.setTextColor(color);
+        t.setGravity(Gravity.CENTER);
+        return t;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setGravity(Gravity.CENTER);
-        layout.setPadding(30, 30, 30, 30);
-        layout.setBackgroundColor(Color.rgb(12, 20, 38));
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setGravity(Gravity.CENTER_HORIZONTAL);
+        root.setPadding(dp(25), dp(20), dp(25), dp(20));
+        root.setBackgroundColor(Color.rgb(15, 15, 15));
 
-        TextView title = new TextView(this);
-        title.setText("ABDULRAZIK VPN");
-        title.setTextSize(28);
+        TextView menu = text("☰", 35, Color.WHITE);
+        menu.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
+        root.addView(menu, new LinearLayout.LayoutParams(
+            -1, dp(55)
+        ));
+
+        TextView title = text("ABDULRAZIK VPN", 28, Color.WHITE);
         title.setTypeface(null, Typeface.BOLD);
-        title.setTextColor(Color.WHITE);
-        title.setGravity(Gravity.CENTER);
-        layout.addView(title);
+        LinearLayout.LayoutParams titleParams =
+            new LinearLayout.LayoutParams(-1, dp(100));
+        titleParams.topMargin = dp(15);
+        root.addView(title, titleParams);
 
-        TextView subtitle = new TextView(this);
-        subtitle.setText("Secure Connection");
-        subtitle.setTextColor(Color.LTGRAY);
-        subtitle.setTextSize(15);
-        layout.addView(subtitle);
+        TextView traffic = text("↑  0 B                 ↓  0 B", 18, Color.WHITE);
+        LinearLayout.LayoutParams trafficParams =
+            new LinearLayout.LayoutParams(-1, dp(90));
+        trafficParams.topMargin = dp(35);
+        root.addView(traffic, trafficParams);
 
-        TextView countryLabel = new TextView(this);
-        countryLabel.setText("Select Country");
-        countryLabel.setTextColor(Color.WHITE);
-        countryLabel.setTextSize(18);
-        countryLabel.setPadding(0, 40, 0, 10);
-        layout.addView(countryLabel);
+        powerButton = text("⏻\nSTART", 27, Color.WHITE);
+        powerButton.setTypeface(null, Typeface.BOLD);
+        powerButton.setBackground(gradient(
+            Color.rgb(255, 145, 0),
+            Color.rgb(240, 25, 35),
+            200
+        ));
+        LinearLayout.LayoutParams powerParams =
+            new LinearLayout.LayoutParams(dp(190), dp(190));
+        powerParams.gravity = Gravity.CENTER;
+        powerParams.topMargin = dp(20);
+        powerParams.bottomMargin = dp(65);
+        root.addView(powerButton, powerParams);
 
-        String[] items = {"Germany", "Turkey", "USA", "United Kingdom"};
+        TextView serverLabel = text(
+            "🇩🇪   Select Server", 16, Color.WHITE
+        );
+        serverLabel.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
+        root.addView(serverLabel, new LinearLayout.LayoutParams(
+            -1, dp(35)
+        ));
+
+        String[] items = {
+            "Automatic",
+            "Germany",
+            "Turkey",
+            "USA",
+            "United Kingdom"
+        };
+
         countries = new Spinner(this);
-
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
-            this, android.R.layout.simple_spinner_item, items);
-
+            this,
+            android.R.layout.simple_spinner_item,
+            items
+        );
         adapter.setDropDownViewResource(
-            android.R.layout.simple_spinner_dropdown_item);
-
+            android.R.layout.simple_spinner_dropdown_item
+        );
         countries.setAdapter(adapter);
-        layout.addView(countries);
+        countries.setBackground(gradient(
+            Color.rgb(255, 145, 0),
+            Color.rgb(240, 25, 35),
+            35
+        ));
 
-        Button test = new Button(this);
-        test.setText("TEST XRAY ENGINE");
-        layout.addView(test);
+        root.addView(countries, new LinearLayout.LayoutParams(
+            -1, dp(65)
+        ));
 
-        Button connect = new Button(this);
-        connect.setText("CONNECT");
-        connect.setTextSize(18);
-        layout.addView(connect);
+        status = text("Status: Disconnected", 16, Color.WHITE);
+        LinearLayout.LayoutParams statusParams =
+            new LinearLayout.LayoutParams(-1, dp(55));
+        statusParams.topMargin = dp(55);
+        root.addView(status, statusParams);
 
-        status = new TextView(this);
-        status.setText("Status: Disconnected");
-        status.setTextColor(Color.WHITE);
-        status.setTextSize(16);
-        status.setPadding(0, 25, 0, 0);
-        layout.addView(status);
+        TextView ip = text("IP: Unknown\nLocation: Unknown", 17, Color.WHITE);
+        root.addView(ip, new LinearLayout.LayoutParams(
+            -1, dp(75)
+        ));
 
-        test.setOnClickListener(v -> testXray());
+        TextView footer = text(
+            "ABDULRAZIK VPN  •  Secure Connection",
+            12, Color.LTGRAY
+        );
+        root.addView(footer, new LinearLayout.LayoutParams(
+            -1, dp(45)
+        ));
 
-        connect.setOnClickListener(v -> requestVpnPermission());
+        powerButton.setOnClickListener(v -> requestVpnPermission());
 
-        setContentView(layout);
-    }
+        menu.setOnClickListener(v ->
+            Toast.makeText(this, "ABDULRAZIK VPN", Toast.LENGTH_SHORT).show()
+        );
 
-    private void testXray() {
-        status.setText("Status: Testing Xray...");
-
-        new Thread(() -> {
-            try {
-                String version = XrayEngine.initialize(
-                    getApplicationContext()
-                );
-
-                runOnUiThread(() ->
-                    status.setText("Xray Ready: " + version)
-                );
-
-            } catch (Throwable e) {
-                runOnUiThread(() ->
-                    status.setText("Xray Error: " + e.getClass().getSimpleName())
-                );
-            }
-        }).start();
+        setContentView(root);
     }
 
     private void requestVpnPermission() {
@@ -108,7 +153,9 @@ public class MainActivity extends Activity {
         if (intent != null) {
             startActivityForResult(intent, VPN_REQUEST_CODE);
         } else {
-            status.setText("Permission granted; server not connected yet");
+            status.setText(
+                "Permission granted; Xray connection is not configured"
+            );
         }
     }
 
@@ -121,7 +168,7 @@ public class MainActivity extends Activity {
         if (requestCode == VPN_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
                 status.setText(
-                    "VPN permission granted; engine not connected yet"
+                    "Permission granted; Xray connection is not configured"
                 );
             } else {
                 status.setText("VPN permission denied");
