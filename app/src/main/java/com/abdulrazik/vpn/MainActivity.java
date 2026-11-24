@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Build;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
@@ -193,10 +194,29 @@ public class MainActivity extends Activity {
             android.R.layout.simple_spinner_item,
             items
         );
+
         adapter.setDropDownViewResource(
             android.R.layout.simple_spinner_dropdown_item
         );
+
         countries.setAdapter(adapter);
+
+        countries.setOnItemSelectedListener(
+            new AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(
+                        AdapterView<?> parent, View view,
+                        int position, long id) {
+                    if (position < serverUris.size()) {
+                        prefs.edit().putInt("selected", position).apply();
+                    }
+                }
+
+                @Override
+                public void onNothingSelected(AdapterView<?> parent) {
+                }
+            }
+        );
 
         int selected = prefs.getInt("selected", 0);
         if (selected >= 0 && selected < items.size()) {
@@ -265,29 +285,55 @@ public class MainActivity extends Activity {
     private void requestVpnPermission() {
         if (serverUris.isEmpty()) {
             status.setText("Please add a VLESS server first");
-            Toast.makeText(this,
-                "Add a server before connecting", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Add a server before connecting", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        Intent intent = VpnService.prepare(this);
+        Intent permissionIntent = android.net.VpnService.prepare(this);
 
-        if (intent != null) {
-            startActivityForResult(intent, VPN_REQUEST_CODE);
+        if (permissionIntent != null) {
+            startActivityForResult(permissionIntent, VPN_REQUEST_CODE);
         } else {
-            status.setText("Permission granted; Xray is not connected yet");
+            startVpnService();
+        }
+    }
+
+    private void startVpnService() {
+        int selected = countries.getSelectedItemPosition();
+
+        if (selected < 0 || selected >= serverUris.size()) {
+            status.setText("Please select a valid server");
+            return;
+        }
+
+        Intent serviceIntent = new Intent(this, com.abdulrazik.vpn.VpnService.class);
+        serviceIntent.putExtra(
+            com.abdulrazik.vpn.VpnService.EXTRA_SERVER_URI,
+            serverUris.get(selected)
+        );
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent);
+            } else {
+                startService(serviceIntent);
+            }
+
+            status.setText("Status: Connecting...");
+            powerButton.setText("⏻\\nCONNECTING");
+        } catch (Exception e) {
+            status.setText("Could not start VPN service");
+            Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
     @Override
-    protected void onActivityResult(
-        int requestCode, int resultCode, Intent data) {
-
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
         if (requestCode == VPN_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
-                status.setText("Permission granted; Xray is not connected yet");
+                startVpnService();
             } else {
                 status.setText("VPN permission denied");
             }
