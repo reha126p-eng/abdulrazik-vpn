@@ -61,24 +61,24 @@ public class MainActivity extends Activity {
         root.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         root.setGravity(Gravity.CENTER_HORIZONTAL);
         root.setPadding(dp(25), dp(20), dp(25), dp(20));
-        root.setBackgroundColor(Color.rgb(15, 15, 15));
+        root.setBackgroundColor(Color.rgb(242, 247, 255));
 
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
         scroll.addView(root);
 
-        TextView menu = text("☰", 35, Color.WHITE);
+        TextView menu = text("☰", 30, Color.rgb(35, 75, 130));
         menu.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
         root.addView(menu, new LinearLayout.LayoutParams(-1, dp(55)));
 
-        TextView title = text("ABDULRAZIK VPN", 28, Color.WHITE);
+        TextView title = text("ABDULRAZIK VPN", 28, Color.rgb(20, 55, 105));
         title.setTypeface(null, Typeface.BOLD);
         LinearLayout.LayoutParams titleParams =
             new LinearLayout.LayoutParams(-1, dp(100));
         titleParams.topMargin = dp(15);
         root.addView(title, titleParams);
 
-        TextView traffic = text("↑  0 B                 ↓  0 B", 18, Color.WHITE);
+        TextView traffic = text("اتصال سریع و امن", 18, Color.rgb(90, 115, 150));
         LinearLayout.LayoutParams trafficParams =
             new LinearLayout.LayoutParams(-1, dp(90));
         trafficParams.topMargin = dp(20);
@@ -87,8 +87,8 @@ public class MainActivity extends Activity {
         powerButton = text("⏻\nاتصال", 27, Color.WHITE);
         powerButton.setTypeface(null, Typeface.BOLD);
         powerButton.setBackground(gradient(
-            Color.rgb(255, 145, 0),
-            Color.rgb(240, 25, 35),
+            Color.rgb(30, 125, 245),
+            Color.rgb(20, 75, 190),
             200
         ));
         LinearLayout.LayoutParams powerParams =
@@ -98,14 +98,14 @@ public class MainActivity extends Activity {
         powerParams.bottomMargin = dp(30);
         root.addView(powerButton, powerParams);
 
-        TextView serverLabel = text("انتخاب سرور", 16, Color.WHITE);
+        TextView serverLabel = text("انتخاب موقعیت سرور", 16, Color.rgb(35, 65, 105));
         serverLabel.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
         root.addView(serverLabel, new LinearLayout.LayoutParams(-1, dp(35)));
 
         countries = new Spinner(this);
         countries.setBackground(gradient(
-            Color.rgb(255, 145, 0),
-            Color.rgb(240, 25, 35),
+            Color.rgb(30, 125, 245),
+            Color.rgb(20, 75, 190),
             35
         ));
         root.addView(countries, new LinearLayout.LayoutParams(-1, dp(60)));
@@ -113,10 +113,10 @@ public class MainActivity extends Activity {
 
         Button addServer = new Button(this);
         addServer.setText("+ افزودن سرور VLESS");
-        addServer.setTextColor(Color.WHITE);
+        addServer.setTextColor(Color.rgb(35, 75, 130));
         addServer.setBackground(gradient(
-            Color.rgb(45, 45, 45),
-            Color.rgb(75, 75, 75),
+            Color.rgb(220, 235, 255),
+            Color.rgb(195, 220, 250),
             25
         ));
         LinearLayout.LayoutParams addParams =
@@ -124,18 +124,18 @@ public class MainActivity extends Activity {
         addParams.topMargin = dp(15);
         root.addView(addServer, addParams);
 
-        status = text("وضعیت: قطع است", 16, Color.WHITE);
+        status = text("وضعیت: قطع است", 16, Color.rgb(35, 75, 130));
         LinearLayout.LayoutParams statusParams =
             new LinearLayout.LayoutParams(-1, dp(55));
         statusParams.topMargin = dp(20);
         root.addView(status, statusParams);
 
-        TextView ip = text("آی‌پی: نامشخص\nموقعیت: نامشخص", 17, Color.WHITE);
+        TextView ip = text("آی‌پی: نامشخص\nموقعیت: نامشخص", 17, Color.rgb(65, 90, 125));
         root.addView(ip, new LinearLayout.LayoutParams(-1, dp(75)));
 
         TextView footer = text(
             "ABDULRAZIK VPN  •  اتصال امن",
-            12, Color.LTGRAY
+            12, Color.rgb(110, 130, 160)
         );
         root.addView(footer, new LinearLayout.LayoutParams(-1, dp(45)));
 
