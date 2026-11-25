@@ -17,6 +17,9 @@ import android.graphics.drawable.GradientDrawable;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 
@@ -158,6 +161,11 @@ public class MainActivity extends Activity {
         TextView ip = text("آی‌پی: نامشخص\nموقعیت: نامشخص", 17, Color.rgb(65, 90, 125));
         root.addView(ip, new LinearLayout.LayoutParams(-1, dp(75)));
 
+        Button diagnosticButton = new Button(this);
+        diagnosticButton.setText("گزارش عیب‌یابی");
+        root.addView(diagnosticButton, new LinearLayout.LayoutParams(-1, dp(50)));
+        diagnosticButton.setOnClickListener(v -> showDiagnostics());
+
         TextView footer = text(
             "ABDULRAZIK VPN  •  اتصال امن",
             12, Color.rgb(110, 130, 160)
@@ -173,6 +181,36 @@ public class MainActivity extends Activity {
         );
 
         setContentView(scroll);
+    }
+
+
+    private void showDiagnostics() {
+        File file = new File(getExternalFilesDir(null), "vpn-diagnostic.txt");
+        StringBuilder report = new StringBuilder();
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                report.append(line).append("\n");
+            }
+        } catch (Exception e) {
+            report.append("گزارش هنوز ساخته نشده یا قابل خواندن نیست.\n");
+            report.append(e.getMessage());
+        }
+
+        new AlertDialog.Builder(this)
+            .setTitle("گزارش عیب‌یابی VPN")
+            .setMessage(report.toString())
+            .setPositiveButton("بستن", null)
+            .setNeutralButton("کپی گزارش", (dialog, which) -> {
+                android.content.ClipboardManager clipboard =
+                    (android.content.ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                clipboard.setPrimaryClip(
+                    android.content.ClipData.newPlainText("VPN diagnostics", report.toString())
+                );
+                Toast.makeText(this, "گزارش کپی شد", Toast.LENGTH_SHORT).show();
+            })
+            .show();
     }
 
     private void loadServers() {
