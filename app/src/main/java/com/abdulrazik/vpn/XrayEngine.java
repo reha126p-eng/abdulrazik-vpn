@@ -65,7 +65,6 @@ public final class XrayEngine {
 
     public static String buildConfig(
             String vlessLink, String physicalInterface) throws Exception {
-
         Uri uri = Uri.parse(vlessLink);
 
         if (!"vless".equalsIgnoreCase(uri.getScheme())) {
@@ -76,33 +75,15 @@ public final class XrayEngine {
         String host = uri.getHost();
         int port = uri.getPort();
 
-        if (uuid == null || uuid.isEmpty() ||
-            host == null || port < 1) {
+        if (uuid == null || uuid.isEmpty() || host == null || port < 1) {
             throw new IllegalArgumentException("Invalid VLESS server address");
         }
 
         String security = uri.getQueryParameter("security");
         String network = uri.getQueryParameter("type");
-
-        if (security == null || !security.equalsIgnoreCase("reality")) {
-            throw new IllegalArgumentException("This version requires REALITY");
-        }
-
-        if (network != null && !network.equalsIgnoreCase("tcp")) {
-            throw new IllegalArgumentException("Only TCP transport is supported");
-        }
-
         String serverName = uri.getQueryParameter("sni");
-        String publicKey = uri.getQueryParameter("pbk");
-        String shortId = uri.getQueryParameter("sid");
-        String fingerprint = "chrome";
+        String fingerprint = uri.getQueryParameter("fp");
         String flow = uri.getQueryParameter("flow");
-        String spiderX = uri.getQueryParameter("spx");
-
-        if (serverName == null || serverName.isEmpty() ||
-            publicKey == null || publicKey.isEmpty()) {
-            throw new IllegalArgumentException("REALITY settings are incomplete");
-        }
 
         if (physicalInterface == null || physicalInterface.isEmpty()) {
             throw new IllegalArgumentException("Physical network interface not found");
@@ -110,6 +91,25 @@ public final class XrayEngine {
 
         if (fingerprint == null || fingerprint.isEmpty()) {
             fingerprint = "chrome";
+        }
+
+        boolean realityMode = "reality".equalsIgnoreCase(security);
+        boolean tlsMode = "tls".equalsIgnoreCase(security);
+
+        if (!realityMode && !tlsMode) {
+            throw new IllegalArgumentException("Only REALITY and TLS security are supported");
+        }
+
+        if (realityMode && network != null && !network.equalsIgnoreCase("tcp")) {
+            throw new IllegalArgumentException("REALITY currently requires TCP transport");
+        }
+
+        if (tlsMode && (network == null || !network.equalsIgnoreCase("ws"))) {
+            throw new IllegalArgumentException("TLS currently requires WebSocket transport");
+        }
+
+        if (serverName == null || serverName.isEmpty()) {
+            serverName = host;
         }
 
         JSONObject root = new JSONObject();
@@ -155,17 +155,62 @@ public final class XrayEngine {
         JSONObject vlessSettings = new JSONObject();
         vlessSettings.put("vnext", servers);
 
-        JSONObject reality = new JSONObject();
-        reality.put("serverName", serverName);
-        reality.put("fingerprint", fingerprint);
-        reality.put("password", publicKey);
-        reality.put("shortId", shortId == null ? "" : shortId);
-        reality.put("spiderX", spiderX == null ? "/" : spiderX);
-
         JSONObject stream = new JSONObject();
-        stream.put("network", "tcp");
-        stream.put("security", "reality");
-        stream.put("realitySettings", reality);
+
+        if (realityMode) {
+            String publicKey = uri.getQueryParameter("pbk");
+            String shortId = uri.getQueryParameter("sid");
+            String spiderX = uri.getQueryParameter("spx");
+
+            if (publicKey == null || publicKey.isEmpty()) {
+                throw new IllegalArgumentException("REALITY public key is missing");
+            }
+
+            stream.put("network", "tcp");
+            stream.put("security", "reality");
+
+            JSONObject reality = new JSONObject();
+            reality.put("serverName", serverName);
+            reality.put("fingerprint", fingerprint);
+            reality.put("password", publicKey);
+            reality.put("shortId", shortId == null ? "" : shortId);
+            reality.put("spiderX", spiderX == null ? "/" : spiderX);
+
+            stream.put("realitySettings", reality);
+        } else {
+            stream.put("network", "ws");
+            stream.put("security", "tls");
+
+            JSONObject tls = new JSONObject();
+            tls.put("serverName", serverName);
+            tls.put("fingerprint", fingerprint);
+
+            String alpn = uri.getQueryParameter("alpn");
+            if (alpn != null && !alpn.isEmpty()) {
+                JSONArray protocols = new JSONArray();
+                for (String item : alpn.split(",")) {
+                    if (!item.trim().isEmpty()) {
+                        protocols.put(item.trim());
+                    }
+                }
+                if (protocols.length() > 0) {
+                    tls.put("alpn", protocols);
+                }
+            }
+
+            stream.put("tlsSettings", tls);
+
+            JSONObject ws = new JSONObject();
+            String path = uri.getQueryParameter("path");
+            ws.put("path", path == null || path.isEmpty() ? "/" : path);
+
+            JSONObject headers = new JSONObject();
+            String wsHost = uri.getQueryParameter("host");
+            headers.put("Host", wsHost == null || wsHost.isEmpty() ? host : wsHost);
+            ws.put("headers", headers);
+
+            stream.put("wsSettings", ws);
+        }
 
         JSONObject proxy = new JSONObject();
         proxy.put("tag", "proxy");
@@ -187,7 +232,6 @@ public final class XrayEngine {
         outbounds.put(proxy);
         outbounds.put(direct);
         outbounds.put(block);
-
         root.put("outbounds", outbounds);
 
         return root.toString();
