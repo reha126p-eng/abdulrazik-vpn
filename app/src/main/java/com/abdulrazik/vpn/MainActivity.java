@@ -5,6 +5,9 @@ import android.app.AlertDialog;
 import android.net.VpnService;
 import android.net.Uri;
 import android.content.Intent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Build;
@@ -22,6 +25,28 @@ public class MainActivity extends Activity {
     private static final int VPN_REQUEST_CODE = 100;
     private TextView status;
     private TextView powerButton;
+    private boolean vpnConnected = false;
+    private boolean vpnConnecting = false;
+
+    private final BroadcastReceiver vpnStatusReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (!com.abdulrazik.vpn.VpnService.ACTION_STATUS.equals(intent.getAction())) return;
+
+            vpnConnected = intent.getBooleanExtra(
+                com.abdulrazik.vpn.VpnService.EXTRA_CONNECTED, false
+            );
+
+            String message = intent.getStringExtra(
+                com.abdulrazik.vpn.VpnService.EXTRA_MESSAGE
+            );
+
+            vpnConnecting = message != null && message.contains("در حال اتصال");
+            status.setText(message == null ? "وضعیت نامشخص" : message);
+            updatePowerButton();
+        }
+    };
+
     private Spinner countries;
     private SharedPreferences prefs;
     private final ArrayList<String> serverUris = new ArrayList<>();
@@ -141,7 +166,7 @@ public class MainActivity extends Activity {
 
         addServer.setOnClickListener(v -> showAddServerDialog());
 
-        powerButton.setOnClickListener(v -> requestVpnPermission());
+        powerButton.setOnClickListener(v -> toggleVpn());
 
         menu.setOnClickListener(v ->
             Toast.makeText(this, "ABDULRAZIK VPN", Toast.LENGTH_SHORT).show()
@@ -283,6 +308,41 @@ public class MainActivity extends Activity {
             .show();
     }
 
+
+    private void updatePowerButton() {
+        if (vpnConnected) {
+            powerButton.setText("⏻\\nقطع اتصال");
+            powerButton.setBackground(gradient(
+                Color.rgb(220, 65, 75),
+                Color.rgb(165, 35, 55),
+                200
+            ));
+        } else if (vpnConnecting) {
+            powerButton.setText("⏳\\nدر حال اتصال");
+        } else {
+            powerButton.setText("⏻\\nاتصال");
+            powerButton.setBackground(gradient(
+                Color.rgb(30, 125, 245),
+                Color.rgb(20, 75, 190),
+                200
+            ));
+        }
+    }
+
+    private void toggleVpn() {
+        if (vpnConnected || vpnConnecting) {
+            Intent stopIntent = new Intent(this, com.abdulrazik.vpn.VpnService.class);
+            stopIntent.setAction(com.abdulrazik.vpn.VpnService.ACTION_STOP);
+            startService(stopIntent);
+            vpnConnected = false;
+            vpnConnecting = false;
+            status.setText("وضعیت: در حال قطع اتصال...");
+            updatePowerButton();
+        } else {
+            requestVpnPermission();
+        }
+    }
+
     private void requestVpnPermission() {
         if (serverUris.isEmpty()) {
             status.setText("ابتدا یک سرور VLESS اضافه کنید");
@@ -326,6 +386,30 @@ public class MainActivity extends Activity {
             status.setText("اجرای سرویس VPN ممکن نشد");
             Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        IntentFilter filter = new IntentFilter(
+            com.abdulrazik.vpn.VpnService.ACTION_STATUS
+        );
+
+        if (Build.VERSION.SDK_INT >= 33) {
+            registerReceiver(vpnStatusReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(vpnStatusReceiver, filter);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        try {
+            unregisterReceiver(vpnStatusReceiver);
+        } catch (Exception ignored) {
+        }
+        super.onPause();
     }
 
     @Override
