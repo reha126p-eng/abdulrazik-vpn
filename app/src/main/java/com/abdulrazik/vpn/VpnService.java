@@ -8,6 +8,12 @@ import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.system.OsConstants;
 import android.util.Log;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.BufferedWriter;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 import libv2ray.CoreCallbackHandler;
 import libv2ray.CoreController;
@@ -27,6 +33,23 @@ public class VpnService extends android.net.VpnService {
     private ParcelFileDescriptor vpnInterface;
     private CoreController coreController;
     private volatile boolean stopRequested = false;
+    private synchronized void diagnostic(String message) {
+        try {
+            File dir = getExternalFilesDir(null);
+            if (dir == null) return;
+            File file = new File(dir, "vpn-diagnostic.txt");
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(file, true))) {
+                String time = new SimpleDateFormat(
+                    "yyyy-MM-dd HH:mm:ss", Locale.US
+                ).format(new Date());
+                writer.write(time + " | " + message);
+                writer.newLine();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Diagnostic write failed", e);
+        }
+    }
+
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -63,6 +86,7 @@ public class VpnService extends android.net.VpnService {
     private void startVpn(String serverUri) {
         try {
             if (stopRequested) return;
+            diagnostic("VPN startup requested");
             String physicalInterface =
                     NetworkHelper.getPhysicalInterface(this);
 
@@ -72,7 +96,9 @@ public class VpnService extends android.net.VpnService {
                 throw new Exception("Physical network not found");
             }
 
+            diagnostic("Physical interface: " + physicalInterface);
             String version = XrayEngine.initialize(this);
+            diagnostic("Xray initialized: " + version);
             Log.i(TAG, "Xray: " + version);
 
             String config =
@@ -118,7 +144,9 @@ public class VpnService extends android.net.VpnService {
                 };
 
                 coreController = Libv2ray.newCoreController(callback);
+                diagnostic("Starting Xray core");
                 coreController.startLoop(config, vpnInterface.getFd());
+                diagnostic("Xray core returned from startLoop");
 
                 if (!coreController.getIsRunning()) {
                     throw new Exception("Xray did not start");
@@ -130,11 +158,13 @@ public class VpnService extends android.net.VpnService {
                 return;
             }
 
+            diagnostic("VPN service reports connected");
             Log.i(TAG, "ABDULRAZIK VPN connected");
             sendStatus(true, "وضعیت: متصل است");
 
         } catch (Exception e) {
             Log.e(TAG, "VPN startup failed", e);
+            diagnostic("VPN startup failed: " + e.getClass().getSimpleName() + ": " + e.getMessage());
             stopVpn();
 
             if (stopRequested) return;
